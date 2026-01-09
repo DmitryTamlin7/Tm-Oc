@@ -10,22 +10,28 @@ mod allocator;
 
 
 use core::panic::PanicInfo;
+use bootloader::bootinfo::BootInfo;
+use crate::memory::BootInfoFrameAllocator;
 
 
-#[unsafe(no_mangle)]
-pub extern "C" fn _start() -> ! {
+#[no_mangle]
+pub extern "C" fn _start(boot_info: &'static BootInfo) -> ! {
     gdt::init();
     interrupts::init();
 
-    println!("Tm OC Initialized{}", "!");
+    println!("OS Initialized!");
 
-    // обход безопасности и намеренное ломание ядра
-    unsafe {
-        *(0xdeadbeef as *mut u64) = 42;
+    let mut frame_allocator = BootInfoFrameAllocator::init(&boot_info.memory_map);
+
+    for i in 0..5 {
+        if let Some(frame) = frame_allocator.allocate_frame() {
+            println!("Allocated frame {} at physical address {:#X}", i, frame.start_address().as_u64());
+        } else {
+            println!("No more frames available!");
+        }
     }
 
-    loop{}
+    loop {}
 }
-
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! { loop {} }
