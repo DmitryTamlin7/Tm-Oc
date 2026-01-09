@@ -1,3 +1,4 @@
+#![feature(abi_x86_interrupt)]
 #![no_std]
 #![no_main]
 
@@ -14,9 +15,14 @@ use core::panic::PanicInfo;
 #[unsafe(no_mangle)]
 pub extern "C" fn _start() -> ! {
 
-    println!("Hello World from Tm_OC {}", "!");
-    loop{}
+    gdt::init();
+    interrupts::init();
 
+    println!("OC Initialized{}", "!");
+
+    x86_64::instructions::interrupts::int3();
+
+    loop{}
 }
 
 #[panic_handler]
