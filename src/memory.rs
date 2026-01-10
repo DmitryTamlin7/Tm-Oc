@@ -37,3 +37,9 @@ impl BootInfoFrameAllocator {
 
     }
 }
+
+unsafe impl x86_64::structures::paging::FrameAllocator<Size4KiB> for BootInfoFrameAllocator {
+    fn allocate_frame(&mut self) -> Option<PhysFrame> {
+        self.allocate_frame()
+    }
+}

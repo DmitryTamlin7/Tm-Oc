@@ -1,6 +1,5 @@
 use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame, PageFaultErrorCode};
 use x86_64::registers::control::Cr2;
-use x86_64::VirtAddr;
 use lazy_static::lazy_static;
 use crate::{gdt, println};
 
