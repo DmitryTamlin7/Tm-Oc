@@ -4,13 +4,15 @@ version = "0.1.0"
 edition = "2018"
 
 [dependencies]
-bootloader = "0.9.33"
+bootloader = {  version = "0.9.33" , features = ["map_physical_memory"] }
 spin = "0.5.2"
 x86_64 = "0.15.2"
+linked_list_allocator = "0.9"
 
 
 [profile.dev]
 panic = "abort"
+test = false
 
 [profile.release]
 panic = "abort"
