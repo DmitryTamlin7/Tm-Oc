@@ -44,6 +44,28 @@
 
 ---
 
+## 🖥 Командная оболочка (Shell)
+Система поддерживает интерактивный ввод. Архитектура обработки ввода:
+
+**Hardware:** Нажатие клавиши генерирует прерывание IRQ 1.
+
+**Kernel:** Обработчик считывает скан-код из порта 0x60.
+
+**Shell:** Скан-код преобразуется в символ и сохраняется в буфере String.
+
+**Execute:** При нажатии Enter строка анализируется и выполняется команда.
+
+Пример сессии:
+
+Plaintext
+```bash
+> help
+Available commands: help, clear, sum, uptime
+> sum 100
+Sum from 1 to 100 is: 5050
+> clear
+```
+
 ## ⚡ Быстрый старт
 
 ### Требования
@@ -71,23 +93,15 @@ cargo run
 * [x] **Phase 0-2:** VGA вывод, GDT, обработка Double Fault.
 * [x] **Phase 3:** Interrupt Descriptor Table (IDT) и исключения.
 * [x] **Phase 4-5:** Реализация Paging и аллокатора фреймов.
-* [x] **Phase 6:** Heap Allocator & Standard Collections (`alloc`) — **Current Milestone** ✅
-* [ ] **Phase 7:** Multitasking (Cooperative/Preemptive).
-* [ ] **Phase 8:** Keyboard Input Driver.
+* [x] **Phase 6:** Heap Allocator & Standard Collections (`alloc`) 
+* [x] **Phase 7:** Multitasking (Cooperative/Preemptive).
+* [x] **Phase 8:** Keyboard Input Driver.
+* [ ] **Phase 9:** Multitasking (Async/Await & Executor).
+*[ ] **Phase 10:** Simple Filesystem (Read-only).
 
 ---
 
-## 🧪 Тестирование
 
-Проект успешно проходит тесты на выделение памяти в куче:
-
-```rust
-// Пример работающего кода в ядре:
-let heap_value = Box::new(42);
-let mut list = Vec::new();
-list.push("Tm_Os is running!");
-
-```
 
 ---
 
