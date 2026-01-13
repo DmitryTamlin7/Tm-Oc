@@ -130,6 +130,10 @@ impl Writer {
             }
         }
     }
+
+    pub fn set_color(&mut self, foreground: Color, background: Color) {
+        self.color_code = ColorCode::new(foreground, background);
+    }
 }
 
 impl fmt::Write for Writer {
@@ -170,4 +174,8 @@ pub fn clear_screen() {
 
 pub fn backspace() {
     WRITER.lock().backspace();
+}
+
+pub fn set_color(foreground: Color, background: Color) {
+    WRITER.lock().set_color(foreground, background);
 }

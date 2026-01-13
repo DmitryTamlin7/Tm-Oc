@@ -59,6 +59,7 @@ impl Shell {
                 println!("- sum <n>: Calculate sum from 1 to n");
                 println!("- uptime: System status");
                 println!("- clear: Clear the screen");
+                println!("Try 'color' to change theme!");
             },
             "echo" => {
                 println!("{}", args);
@@ -80,6 +81,11 @@ impl Shell {
             "clear" => {
                 vga_buffer::clear_screen();
             },
+            "color" => {
+                vga_buffer::set_color(vga_buffer::Color::Pink, vga_buffer::Color::Black);
+                vga_buffer::clear_screen();
+                println!("Theme updated!");
+            }
             _ => println!("Unknown command: {}", command),
         }
     }
