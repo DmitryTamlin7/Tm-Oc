@@ -6,23 +6,20 @@ use core::{pin::Pin, task::{Poll, Context}};
 use futures_util::stream::{Stream, StreamExt};
 use futures_util::task::AtomicWaker;
 use pc_keyboard::{layouts, DecodedKey, HandleControl, Keyboard, ScancodeSet1, KeyCode};
+use crate::task::sleep;
 
 static SCANCODE_QUEUE: OnceCell<ArrayQueue<u8>> = OnceCell::uninit();
 static WAKER: AtomicWaker = AtomicWaker::new();
 
 pub(crate) fn add_scancode(scancode: u8) {
     if let Ok(queue) = SCANCODE_QUEUE.try_get() {
-        if let Err(_) = queue.push(scancode) {
-            // Очередь полна
-        } else {
+        if let Ok(_) = queue.push(scancode) {
             WAKER.wake();
         }
     }
 }
 
-pub struct ScancodeStream {
-    _private: (),
-}
+pub struct ScancodeStream { _private: () }
 
 impl ScancodeStream {
     pub fn new() -> Self {
@@ -63,14 +60,12 @@ pub async fn shell_task() {
                     DecodedKey::Unicode(character) => match character {
                         '\n' => {
                             println!();
-                            execute_command(&buffer);
+                            execute_command(&buffer).await; // ТЕПЕРЬ AWAIT
                             buffer.clear();
                             print!("> ");
                         }
-                        '\u{0008}' => { // Backspace
-                            if buffer.pop().is_some() {
-                                vga_buffer::backspace();
-                            }
+                        '\u{0008}' => {
+                            if buffer.pop().is_some() { vga_buffer::backspace(); }
                         }
                         c => {
                             buffer.push(c);
@@ -79,7 +74,7 @@ pub async fn shell_task() {
                     },
                     DecodedKey::RawKey(KeyCode::Return) => {
                         println!();
-                        execute_command(&buffer);
+                        execute_command(&buffer).await; // ТЕПЕРЬ AWAIT
                         buffer.clear();
                         print!("> ");
                     }
@@ -90,7 +85,7 @@ pub async fn shell_task() {
     }
 }
 
-fn execute_command(input: &str) {
+async fn execute_command(input: &str) {
     let input = input.trim();
     if input.is_empty() { return; }
 
@@ -99,16 +94,24 @@ fn execute_command(input: &str) {
     let args = parts.next().unwrap_or("");
 
     match command {
-        "help" => println!("Commands: help, clear, uptime, sum <n>, echo <msg>"),
+        "help" => println!("Commands: help, clear, uptime, sum <n>, sleep <ms>"),
         "clear" => vga_buffer::clear_screen(),
-        "uptime" => println!("Tm_Os is running in Async Mode!"),
-        "echo" => println!("{}", args),
+        "uptime" => println!("Tm_Os Async Mode. Ticks: {}", crate::interrupts::TICKS.load(core::sync::atomic::Ordering::Relaxed)),
         "sum" => {
             if let Ok(n) = args.parse::<u64>() {
                 let mut total: u64 = 0;
                 for i in 1..=n { total += i; }
-                println!("Sum (1..{}): {}", n, total);
-            } else { println!("Usage: sum <number>"); }
+                println!("Sum: {}", total);
+            }
+        },
+        "sleep" => {
+            if let Ok(ms) = args.parse::<u64>() {
+                println!("Sleeping for {} ms...", ms);
+                sleep(ms).await;
+                println!("Woke up!");
+            } else {
+                println!("Usage: sleep <milliseconds>");
+            }
         },
         _ => println!("Unknown command: {}", command),
     }
