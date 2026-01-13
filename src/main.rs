@@ -5,17 +5,16 @@
 
 extern crate alloc;
 
-use core::panic::PanicInfo;
-use bootloader::{BootInfo, entry_point};
-use x86_64::VirtAddr;
-
 mod vga_buffer;
 mod interrupts;
 mod gdt;
 mod memory;
 mod allocator;
+mod task;
 
-use crate::memory::{BootInfoFrameAllocator, init_offset_page_table};
+use bootloader::{BootInfo, entry_point};
+use x86_64::VirtAddr;
+use crate::task::{Task, simple_executor::SimpleExecutor};
 
 entry_point!(kernel_main);
 
@@ -24,35 +23,31 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     interrupts::init();
 
     let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
-    let mut mapper = unsafe { init_offset_page_table(phys_mem_offset) };
-    let mut frame_allocator = unsafe {
-        BootInfoFrameAllocator::init(&boot_info.memory_map)
-    };
+    let mut mapper = unsafe { memory::init_offset_page_table(phys_mem_offset) };
+    let mut frame_allocator = unsafe { memory::BootInfoFrameAllocator::init(&boot_info.memory_map) };
 
-    allocator::init_heap(&mut mapper, &mut frame_allocator)
-        .expect("Heap initialization failed");
+    allocator::init_heap(&mut mapper, &mut frame_allocator).expect("Heap fail");
 
     unsafe { interrupts::PICS.lock().initialize() };
     x86_64::instructions::interrupts::enable();
 
     vga_buffer::clear_screen();
-    println!("Tm_Os");
-    print!("> ");
+    println!("Tm_Os Async Edition");
 
-    loop {
-        x86_64::instructions::hlt();
-    }
+    let mut executor = SimpleExecutor::new();
+    executor.spawn(Task::new(task::keyboard::shell_task()));
+    executor.run();
+
+    loop { x86_64::instructions::hlt(); }
+}
+
+#[panic_handler]
+fn panic(info: &core::panic::PanicInfo) -> ! {
+    println!("{}", info);
+    loop { x86_64::instructions::hlt(); }
 }
 
 #[alloc_error_handler]
 fn alloc_error_handler(layout: alloc::alloc::Layout) -> ! {
-    panic!("allocation error: {:?}", layout)
-}
-
-#[panic_handler]
-fn panic(info: &PanicInfo) -> ! {
-    println!("{}", info);
-    loop {
-        x86_64::instructions::hlt();
-    }
+    panic!("Alloc error: {:?}", layout)
 }
