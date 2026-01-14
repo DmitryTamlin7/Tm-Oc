@@ -5,6 +5,7 @@ use spin;
 use crate::{gdt, println, task::keyboard::add_scancode};
 use core::sync::atomic::{AtomicU64, Ordering};
 
+
 pub const PIC_1_OFFSET: u8 = 32;
 pub const PIC_2_OFFSET: u8 = PIC_1_OFFSET + 8;
 
@@ -39,9 +40,8 @@ lazy_static! {
     };
 }
 
-// Инициализация PIT (Programmable Interval Timer)
 fn init_pit() {
-    let divisor: u16 = 1193; // Примерно 1000 Гц (прерывание каждую 1 мс)
+    let divisor: u16 = 1193;
     unsafe {
         use x86_64::instructions::port::Port;
         let mut cmd_port = Port::new(0x43);
@@ -57,11 +57,17 @@ pub fn init() {
     init_pit();
 }
 
-extern "x86-interrupt" fn timer_interrupt_handler(_stack_frame: InterruptStackFrame) {
-    TICKS.fetch_add(1, Ordering::Relaxed);
-
+extern "x86-interrupt" fn timer_interrupt_handler(
+    _stack_frame: InterruptStackFrame)
+{
+    let current_ticks = TICKS.fetch_add(1, Ordering::Relaxed);
+    if current_ticks % 18 == 0 {
+        let seconds = current_ticks / 18;
+        crate::vga_buffer::print_timer(seconds);
+    }
     unsafe {
-        PICS.lock().notify_end_of_interrupt(InterruptIndex::Timer.as_u8());
+        PICS.lock()
+            .notify_end_of_interrupt(InterruptIndex::Timer.as_u8());
     }
 }
 

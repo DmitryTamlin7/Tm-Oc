@@ -131,6 +131,15 @@ impl Writer {
         }
     }
 
+    pub fn write_byte_at(&mut self, col: usize, row: usize, byte: u8) {
+        let color_code = self.color_code;
+        self.buffer.chars[row][col].write(ScreenChar {
+            ascii_character: byte,
+            color_code,
+        });
+    }
+
+
     pub fn set_color(&mut self, foreground: Color, background: Color) {
         self.color_code = ColorCode::new(foreground, background);
     }
@@ -178,4 +187,34 @@ pub fn backspace() {
 
 pub fn set_color(foreground: Color, background: Color) {
     WRITER.lock().set_color(foreground, background);
+}
+
+pub fn print_timer(seconds: u64) {
+    let mut writer = WRITER.lock();
+
+    let old_color = writer.color_code;
+    writer.set_color(Color::Black, Color::Cyan);
+
+    let hours = seconds / 3600;
+    let mins = (seconds % 3600) / 60;
+    let secs = seconds % 60;
+
+    let col_start = 65;
+    let row = 0;
+
+
+    let prefix = "TIME: ";
+    for (i, &byte) in prefix.as_bytes().iter().enumerate() {
+        writer.write_byte_at(col_start + i, row, byte);
+    }
+    writer.write_byte_at(col_start + 6, row, (hours / 10) as u8 + b'0');
+    writer.write_byte_at(col_start + 7, row, (hours % 10) as u8 + b'0');
+    writer.write_byte_at(col_start + 8, row, b':');
+    writer.write_byte_at(col_start + 9, row, (mins / 10) as u8 + b'0');
+    writer.write_byte_at(col_start + 10, row, (mins % 10) as u8 + b'0');
+    writer.write_byte_at(col_start + 11, row, b':');
+    writer.write_byte_at(col_start + 12, row, (secs / 10) as u8 + b'0');
+    writer.write_byte_at(col_start + 13, row, (secs % 10) as u8 + b'0');
+
+    writer.color_code = old_color;
 }
