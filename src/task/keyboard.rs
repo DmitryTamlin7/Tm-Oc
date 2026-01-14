@@ -94,9 +94,17 @@ async fn execute_command(input: &str) {
     let args = parts.next().unwrap_or("");
 
     match command {
-        "help" => println!("Commands: help, clear, uptime, sum <n>, sleep <ms>"),
+        "help" => println!("Commands: ls, cat <file>, help, clear, uptime, sum <n>, sleep <ms>"),
         "clear" => vga_buffer::clear_screen(),
-        "uptime" => println!("Tm_Os Async Mode. Ticks: {}", crate::interrupts::TICKS.load(core::sync::atomic::Ordering::Relaxed)),
+        "ls" => crate::fs::list_files(), // ВЫЗОВ ФС
+        "cat" => {
+            if let Some(file) = crate::fs::get_file(args.trim()) {
+                println!("{}", file.content);
+            } else {
+                println!("File not found: {}", args);
+            }
+        }
+        "uptime" => println!("Ticks: {}", crate::interrupts::TICKS.load(core::sync::atomic::Ordering::Relaxed)),
         "sum" => {
             if let Ok(n) = args.parse::<u64>() {
                 let mut total: u64 = 0;
@@ -106,11 +114,7 @@ async fn execute_command(input: &str) {
         },
         "sleep" => {
             if let Ok(ms) = args.parse::<u64>() {
-                println!("Sleeping for {} ms...", ms);
                 sleep(ms).await;
-                println!("Woke up!");
-            } else {
-                println!("Usage: sleep <milliseconds>");
             }
         },
         _ => println!("Unknown command: {}", command),

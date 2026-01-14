@@ -16,6 +16,7 @@ mod gdt;
 mod memory;
 mod allocator;
 mod task;
+mod fs;
 
 use crate::memory::{BootInfoFrameAllocator, init_offset_page_table};
 
