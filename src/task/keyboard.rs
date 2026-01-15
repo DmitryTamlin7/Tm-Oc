@@ -94,9 +94,9 @@ async fn execute_command(input: &str) {
     let args = parts.next().unwrap_or("");
 
     match command {
-        "help" => println!("Commands: ls, cat <file>, help, clear, uptime, sum <n>, sleep <ms>"),
+        "help" => println!("Commands: ls, cat <file>, help, clear, uptime, sum <n>, sleep <ms>, info, panic, free"),
         "clear" => vga_buffer::clear_screen(),
-        "ls" => crate::fs::list_files(), // ВЫЗОВ ФС
+        "ls" => crate::fs::list_files(),
         "cat" => {
             if let Some(file) = crate::fs::get_file(args.trim()) {
                 println!("{}", file.content);
@@ -116,6 +116,21 @@ async fn execute_command(input: &str) {
             if let Ok(ms) = args.parse::<u64>() {
                 sleep(ms).await;
             }
+        },
+        "info" => {
+            println!("  ______             ____  _____ ");
+            println!(" /_  __/___ ___     / __ \\/ ___/ ");
+            println!("  / / / __ `__ \\   / / / /\\__ \\  ");
+            println!(" / / / / / / / /  / /_/ /___/ /  ");
+            println!("/_/ /_/ /_/ /_/   \\____//____/   ");
+
+            println!("CPU: x86_64 | Mode: Rust Async | Files: {}", crate::fs::FILES.len());
+        },
+        "free" => {
+            println!("Heap Usage: Dynamic Allocation Enabled (1024 KB reserved)");
+        },
+        "panic" => {
+            panic!("User requested system crash!");
         },
         _ => println!("Unknown command: {}", command),
     }

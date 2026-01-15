@@ -219,3 +219,18 @@ pub fn print_timer(seconds: u64) {
         writer.color_code = old_color;
     }
 }
+
+pub fn draw_header() {
+    if let Some(mut writer) = WRITER.try_lock() {
+        let old_color = writer.color_code;
+        writer.set_color(Color::Black, Color::LightGray);
+        for col in 0..80 {
+            writer.write_byte_at(col, 0, b' ');
+        }
+        let title = " Tm_Os v0.11 | System Mode: Privileged (Ring 0) | Status: Online ";
+        for (i, &byte) in title.as_bytes().iter().enumerate() {
+            writer.write_byte_at(i, 0, byte);
+        }
+        writer.color_code = old_color;
+    }
+}
